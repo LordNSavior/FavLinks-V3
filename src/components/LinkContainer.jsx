@@ -1,11 +1,14 @@
 import Table from "./Table"
 import Form from "./Form"
 import ActivityLog from "./ActivityLog"
+import SharedList from "./SharedList"
+import { Button } from "./ui"
 
 import { useState, useEffect } from "react"
 
-function LinkContainer(){
+function LinkContainer({ user }){
     const [favLinks, setFavLinks] = useState([])
+    const [showShared, setShowShared] = useState(false)
     const API_URL = "http://localhost:5000/links"
 
     // Fetch links from database on component mount
@@ -62,12 +65,16 @@ function LinkContainer(){
 
     return(
         <div>
-            <h1>My Favorite Links</h1>
-            <p>Add a new link with a name and URL to the table! </p>
-            <ActivityLog />
-            <Table data={favLinks} removeLink={handleRemove}/>
-            <h1>Add New</h1>
-            <Form submitNewLink={handleSubmit}/>
+            <div className="mb-3 mt-4 w-full">
+                <Button onClick={() => setShowShared(!showShared)} className="bg-slate-700 w-full sm:w-auto">{showShared ? 'Hide' : 'View'} Shared Links</Button>
+            </div>
+            {showShared && <SharedList />}
+            <h2 className="text-lg font-semibold mt-4">My Favorite Links</h2>
+            <p className="text-sm text-slate-400">Add a new link with a name and URL to the table.</p>
+            {user && user.isAdmin && <ActivityLog />}
+            <div className="mt-4"> <Table data={favLinks} removeLink={handleRemove} /> </div>
+            <h3 className="mt-6 text-md font-medium">Add New</h3>
+            <div className="mt-2"><Form submitNewLink={handleSubmit}/></div>
         </div>
     )
 

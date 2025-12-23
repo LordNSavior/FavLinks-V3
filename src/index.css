@@ -1,16 +1,11 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Minimal customizations can go here */
+@layer base {
+  html, body, #root { height: 100%; }
+  body { @apply bg-slate-900 text-slate-100 antialiased; }
 }
 
 a {
@@ -25,9 +20,10 @@ a:hover {
 body {
   margin: 0;
   display: flex;
-  place-items: center;
+  justify-content: center;
   min-width: 320px;
   min-height: 100vh;
+  padding: 20px;
 }
 
 h1 {
@@ -38,16 +34,18 @@ h1 {
 button {
   border-radius: 8px;
   border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  background-color: transparent;
+  color: var(--text);
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: all 0.18s ease;
 }
 button:hover {
-  border-color: #646cff;
+  transform: translateY(-1px);
+  border-color: rgba(100,108,255,0.15);
 }
 button:focus,
 button:focus-visible {
@@ -57,12 +55,55 @@ button:focus-visible {
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
-    background-color: #ffffff;
+    background-color: #f7fafc;
   }
   a:hover {
     color: #747bff;
   }
   button {
-    background-color: #f9f9f9;
+    background-color: #fff;
   }
 }
+
+/* Utility */
+.container {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.06));
+  border-radius: var(--radius);
+  padding: 1.5rem 2rem;
+  box-shadow: 0 10px 30px rgba(2,6,23,0.6);
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.layout-header {
+  display:flex;align-items:center;justify-content:space-between;padding:1rem 0.5rem;margin-bottom:1.75rem;
+}
+
+.header-controls { margin-left: auto; display:flex; gap:10px; align-items:center }
+
+.brand { font-weight:700; font-size:1.25rem; color:var(--text) }
+
+.muted { color: var(--muted); font-size:0.9rem }
+
+.form-row { display:flex; gap:12px; align-items:center; margin:0.75rem 0; flex-wrap:wrap }
+
+.input { padding:0.75rem 0.9rem; border-radius:10px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:var(--text); width:100%; min-width:220px; margin-bottom:6px }
+
+.btn-primary { background: linear-gradient(90deg,var(--primary),var(--primary-600)); color: #fff; border:none }
+
+.table { width:100%; border-collapse: collapse; margin-top:0.75rem }
+.table th, .table td { text-align:left; padding:0.75rem 1rem; border-bottom:1px solid rgba(255,255,255,0.03) }
+.table th { color: var(--muted); font-size:0.95rem }
+
+.section { margin-top:1rem; padding-top:0.5rem }
+
+h2, h3 { margin-top:1rem; margin-bottom:0.25rem }
+p { margin-top:0.25rem; margin-bottom:0.75rem }
+
+.small { font-size:0.85rem }
