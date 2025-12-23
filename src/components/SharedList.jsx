@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react"
 import Table from "./Table"
+import { apiFetch } from "../api"
 
 function SharedList(){
     const [publicLinks, setPublicLinks] = useState([])
-    const API_URL = "http://localhost:5000/links/public"
 
     useEffect(() => {
         fetchPublic()
@@ -11,7 +11,7 @@ function SharedList(){
 
     const fetchPublic = async () => {
         try {
-            const res = await fetch(API_URL)
+            const res = await apiFetch('/links/public', { auth: false })
             const data = await res.json()
             setPublicLinks(data)
         } catch (err) {
@@ -21,8 +21,8 @@ function SharedList(){
 
     return (
         <div>
-            <h2>Shared Public Links</h2>
-            <p>Links shared by other users.</p>
+            <h2 className="text-lg font-semibold">Shared Public Links</h2>
+            <p className="text-sm text-slate-400">Links shared by other users.</p>
             <Table data={publicLinks} showRemove={false} />
         </div>
     )

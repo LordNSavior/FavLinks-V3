@@ -3,13 +3,13 @@ import Form from "./Form"
 import ActivityLog from "./ActivityLog"
 import SharedList from "./SharedList"
 import { Button } from "./ui"
+import { apiFetch, apiPost, apiDelete, handleUnauthorized } from "../api"
 
 import { useState, useEffect } from "react"
 
 function LinkContainer({ user }){
     const [favLinks, setFavLinks] = useState([])
     const [showShared, setShowShared] = useState(false)
-    const API_URL = "http://localhost:5000/links"
 
     // Fetch links from database on component mount
     useEffect(() => {
@@ -18,8 +18,7 @@ function LinkContainer({ user }){
 
     const fetchLinks = async () => {
         try {
-            const token = localStorage.getItem('favlinks_token')
-            const response = await fetch(API_URL, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+            const response = await apiFetch('/links')
             const data = await response.json()
             setFavLinks(data)
         } catch (error) {
@@ -29,11 +28,9 @@ function LinkContainer({ user }){
 
     const handleRemove = async (id) => {
         try {
-            const token = localStorage.getItem('favlinks_token')
-            const res = await fetch(`${API_URL}/${id}`, { method: "DELETE", headers: token ? { Authorization: `Bearer ${token}` } : {} })
+            const res = await apiDelete(`/links/${id}`)
             if (res.status === 401 || res.status === 403) {
-                localStorage.removeItem('favlinks_token')
-                window.location.reload()
+                handleUnauthorized()
                 return
             }
             setFavLinks(favLinks.filter(link => link.id !== id))
@@ -44,16 +41,10 @@ function LinkContainer({ user }){
 
     const handleSubmit = async (favLink) => {
         try {
-            const token = localStorage.getItem('favlinks_token')
-            const response = await fetch(API_URL, {
-                method: "POST",
-                headers: Object.assign({ "Content-Type": "application/json" }, token ? { Authorization: `Bearer ${token}` } : {}),
-                body: JSON.stringify(favLink)
-            })
+            const response = await apiPost('/links', favLink)
 
             if (response.status === 401 || response.status === 403) {
-                localStorage.removeItem('favlinks_token')
-                window.location.reload()
+                handleUnauthorized()
                 return
             }
             const newLink = await response.json()

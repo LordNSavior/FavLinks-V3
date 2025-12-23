@@ -1,5 +1,25 @@
 import { useEffect, useState } from 'react'
 import { Button, Card } from './ui'
+import { apiFetch, apiDelete, apiPut } from '../api'
+
+function UserRow({ user, me, onToggleAdmin, onClearActivities, onDeleteLinks, onDelete }) {
+  const isMe = me && me.id === user.id
+  return (
+    <tr className="odd:bg-slate-800">
+      <td className="px-4 py-3">{user.id}</td>
+      <td className="px-4 py-3">{user.username}</td>
+      <td className="px-4 py-3">{user.is_admin ? 'Yes' : 'No'}</td>
+      <td className="px-4 py-3">
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => onToggleAdmin(user.id, user.is_admin)} disabled={isMe} variant="secondary">{user.is_admin ? 'Revoke admin' : 'Make admin'}</Button>
+          <Button onClick={() => onClearActivities(user.id, user.username)} disabled={isMe} variant="secondary">Clear activities</Button>
+          <Button onClick={() => onDeleteLinks(user.id, user.username)} disabled={isMe} variant="danger">Delete links</Button>
+          <Button onClick={() => onDelete(user.id)} disabled={isMe} variant="danger">Delete</Button>
+        </div>
+      </td>
+    </tr>
+  )
+}
 
 function Admin() {
   const [users, setUsers] = useState([])
@@ -15,8 +35,7 @@ function Admin() {
   useEffect(() => {
     const fetchMe = async () => {
       try {
-        const token = localStorage.getItem('favlinks_token')
-        const res = await fetch('http://localhost:5000/auth/me', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+        const res = await apiFetch('/auth/me')
         if (!res.ok) return
         const data = await res.json()
         setMe(data.user)
@@ -29,8 +48,7 @@ function Admin() {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('favlinks_token')
-      const res = await fetch('http://localhost:5000/admin/users', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      const res = await apiFetch('/admin/users')
       if (!res.ok) {
         setError('Failed to load users')
         return
@@ -46,8 +64,7 @@ function Admin() {
   const fetchAllActivityCount = async () => {
     try {
       setLoadingCount(true)
-      const token = localStorage.getItem('favlinks_token')
-      const res = await fetch('http://localhost:5000/activities/count?scope=all', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      const res = await apiFetch('/activities/count?scope=all')
       if (!res.ok) { setAllCount(null); return }
       const data = await res.json()
       setAllCount(data.count)
@@ -60,10 +77,8 @@ function Admin() {
   const deleteUser = async (id) => {
     if (!confirm('Delete user? This cannot be undone.')) return
     try {
-      // prevent deleting self in UI
       if (me && me.id === id) { setError('Cannot delete your own account'); return }
-      const token = localStorage.getItem('favlinks_token')
-      const res = await fetch(`http://localhost:5000/admin/users/${id}`, { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      const res = await apiDelete(`/admin/users/${id}`)
       if (!res.ok) {
         setError('Failed to delete user')
         return
@@ -80,8 +95,7 @@ function Admin() {
       await fetchAllActivityCount()
       const count = allCount ?? 0
       if (!confirm(`Clear all activities? This will delete ${count} entries.`)) return
-      const token = localStorage.getItem('favlinks_token')
-      const res = await fetch('http://localhost:5000/activities?scope=all', { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      const res = await apiDelete('/activities?scope=all')
       if (!res.ok) { setError('Failed to clear all activities'); return }
       const data = await res.json()
       alert(`Deleted ${data.deleted} activities.`)
@@ -93,12 +107,11 @@ function Admin() {
 
   const clearUserActivities = async (userId, username) => {
     try {
-      const token = localStorage.getItem('favlinks_token')
-      const resCount = await fetch(`http://localhost:5000/activities/count?scope=user&userId=${userId}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      const resCount = await apiFetch(`/activities/count?scope=user&userId=${userId}`)
       if (!resCount.ok) { setError('Failed to fetch count'); return }
       const { count } = await resCount.json()
       if (!confirm(`Clear ${count} activities for ${username}?`)) return
-      const res = await fetch(`http://localhost:5000/activities?scope=user&userId=${userId}`, { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      const res = await apiDelete(`/activities?scope=user&userId=${userId}`)
       if (!res.ok) { setError('Failed to clear user activities'); return }
       const data = await res.json()
       alert(`Deleted ${data.deleted} activities for ${username}.`)
@@ -111,8 +124,7 @@ function Admin() {
   const deleteUserLinks = async (userId, username) => {
     try {
       if (!confirm(`Delete all links for ${username}? This cannot be undone.`)) return
-      const token = localStorage.getItem('favlinks_token')
-      const res = await fetch(`http://localhost:5000/admin/users/${userId}/links`, { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      const res = await apiDelete(`/admin/users/${userId}/links`)
       if (!res.ok) { setError('Failed to delete user links'); return }
       const data = await res.json()
       alert(`Deleted ${data.deleted} links for ${username}.`)
@@ -124,10 +136,8 @@ function Admin() {
 
   const toggleAdmin = async (id, current) => {
     try {
-      // prevent changing own admin status in UI
       if (me && me.id === id) { setError('Cannot change your own admin status'); return }
-      const token = localStorage.getItem('favlinks_token')
-      const res = await fetch(`http://localhost:5000/admin/users/${id}`, { method: 'PUT', headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { Authorization: `Bearer ${token}` } : {}), body: JSON.stringify({ isAdmin: !current }) })
+      const res = await apiPut(`/admin/users/${id}`, { isAdmin: !current })
       if (!res.ok) {
         const err = await res.json().catch(()=> ({}))
         setError(err.error || 'Failed to update user')
@@ -162,19 +172,15 @@ function Admin() {
           </thead>
           <tbody>
             {users.map(u => (
-              <tr key={u.id} className="odd:bg-slate-800">
-                <td className="px-4 py-3">{u.id}</td>
-                <td className="px-4 py-3">{u.username}</td>
-                <td className="px-4 py-3">{u.is_admin ? 'Yes' : 'No'}</td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-2">
-                    <Button onClick={() => toggleAdmin(u.id, u.is_admin)} disabled={me && me.id === u.id} className="bg-slate-700 hover:bg-slate-600">{u.is_admin ? 'Revoke admin' : 'Make admin'}</Button>
-                    <Button onClick={() => clearUserActivities(u.id, u.username)} disabled={me && me.id === u.id} className="bg-slate-700 hover:bg-slate-600">Clear activities</Button>
-                    <Button onClick={() => deleteUserLinks(u.id, u.username)} disabled={me && me.id === u.id} className="bg-red-600 hover:bg-red-500">Delete links</Button>
-                    <Button onClick={() => deleteUser(u.id)} disabled={me && me.id === u.id} className="bg-red-600 hover:bg-red-500">Delete</Button>
-                  </div>
-                </td>
-              </tr>
+              <UserRow
+                key={u.id}
+                user={u}
+                me={me}
+                onToggleAdmin={toggleAdmin}
+                onClearActivities={clearUserActivities}
+                onDeleteLinks={deleteUserLinks}
+                onDelete={deleteUser}
+              />
             ))}
           </tbody>
         </table>

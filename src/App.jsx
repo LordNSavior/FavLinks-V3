@@ -3,43 +3,39 @@ import LinkContainer from "./components/LinkContainer"
 import Login from "./components/Login"
 import Admin from "./components/Admin"
 import { Button } from "./components/ui"
+import { apiFetch } from "./api"
+import { TOKEN_KEY } from "./config"
 
 function App() {
   const [user, setUser] = useState(null)
-  const [token, setToken] = useState(null)
   const [showAdmin, setShowAdmin] = useState(false)
 
   useEffect(() => {
-    const savedToken = localStorage.getItem('favlinks_token')
+    const savedToken = localStorage.getItem(TOKEN_KEY)
     if (savedToken) {
       // verify token with backend
-      fetch('http://localhost:5000/auth/me', {
-        headers: { Authorization: `Bearer ${savedToken}` },
-      })
+      apiFetch('/auth/me')
         .then((res) => {
           if (!res.ok) throw new Error('Invalid token')
           return res.json()
         })
         .then((data) => {
           setUser(data.user)
-          setToken(savedToken)
         })
         .catch(() => {
-          localStorage.removeItem('favlinks_token')
+          localStorage.removeItem(TOKEN_KEY)
         })
     }
   }, [])
 
   const handleLogin = ({ user: u, token: t }) => {
     setUser(u)
-    setToken(t)
-    localStorage.setItem('favlinks_token', t)
+    localStorage.setItem(TOKEN_KEY, t)
   }
 
   const handleLogout = () => {
     setUser(null)
-    setToken(null)
-    localStorage.removeItem('favlinks_token')
+    localStorage.removeItem(TOKEN_KEY)
   }
 
   if (!user) {

@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react'
+import { apiFetch, apiDelete } from '../api'
+import { ACTIONS } from '../config'
+import { Button } from './ui'
 
 function ActivityLog() {
   const [activities, setActivities] = useState([])
@@ -12,8 +15,7 @@ function ActivityLog() {
 
   const fetchActivities = async () => {
     try {
-      const token = localStorage.getItem('favlinks_token')
-      const res = await fetch('http://localhost:5000/activities', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      const res = await apiFetch('/activities')
       if (!res.ok) return
       const data = await res.json()
       setActivities(data)
@@ -24,8 +26,7 @@ function ActivityLog() {
 
   const fetchMe = async () => {
     try {
-      const token = localStorage.getItem('favlinks_token')
-      const res = await fetch('http://localhost:5000/auth/me', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      const res = await apiFetch('/auth/me')
       if (!res.ok) return
       const data = await res.json()
       setMe(data.user)
@@ -40,9 +41,8 @@ function ActivityLog() {
     if (!confirm(`Clear recent activity (${scope === 'all' ? 'all users' : 'your activity'})?`)) return
     setClearing(true)
     try {
-      const token = localStorage.getItem('favlinks_token')
-      const url = `http://localhost:5000/activities${scope === 'self' ? '' : '?scope=all'}`
-      const res = await fetch(url, { method: 'DELETE', headers: token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : {} })
+      const path = scope === 'self' ? '/activities' : '/activities?scope=all'
+      const res = await apiDelete(path)
       if (!res.ok) {
         console.error('Failed to clear activities')
         setClearing(false)
@@ -59,45 +59,44 @@ function ActivityLog() {
 
   const renderDetails = (a) => {
     // a: { id, user_id, username, action, details, created_at }
-    let details = a.details
     let parsed = null
     try {
       parsed = JSON.parse(a.details)
-    } catch (e) {
+    } catch {
       parsed = null
     }
 
-    if (a.action === 'create_link' && parsed) {
+    if (a.action === ACTIONS.CREATE_LINK && parsed) {
       const name = parsed.name || parsed.title || ''
       const url = parsed.url || parsed.URL || parsed.link || ''
       return `${a.username || 'User'} added link${name ? ` "${name}"` : ''}${url ? ` — ${url}` : ''}`
     }
 
-    if (a.action === 'delete_link' && parsed) {
+    if (a.action === ACTIONS.DELETE_LINK && parsed) {
       const name = parsed.name || ''
       const url = parsed.url || parsed.URL || ''
       return `${a.username || 'User'} deleted link${name ? ` "${name}"` : ''}${url ? ` — ${url}` : ''}`
     }
 
-    if ((a.action === 'update_user_admin' || a.action === 'update_admin_flag' || a.action === 'update_user_admin') && parsed) {
+    if ((a.action === 'update_user_admin' || a.action === ACTIONS.UPDATE_ADMIN || a.action === 'update_user_admin') && parsed) {
       const target = parsed.target || parsed
       return `${a.username || 'User'} changed admin status: ${JSON.stringify(target)}`
     }
 
     // default
-    return details || a.action
+    return a.details || a.action
   }
 
   return (
-    <div>
-      <h4>Recent activity</h4>
-      <div style={{marginBottom:8}}>
-        <button onClick={clearActivities} disabled={clearing || activities.length===0}>{clearing ? 'Clearing...' : 'Clear recent activity'}</button>
+    <div className="my-4">
+      <h4 className="text-md font-medium">Recent activity</h4>
+      <div className="my-2">
+        <Button onClick={clearActivities} disabled={clearing || activities.length===0} variant="secondary">{clearing ? 'Clearing...' : 'Clear recent activity'}</Button>
       </div>
-      {!activities.length ? <p>No recent activity</p> : (
-        <ul>
+      {!activities.length ? <p className="text-sm text-slate-400">No recent activity</p> : (
+        <ul className="text-sm space-y-1">
           {activities.map((a) => (
-            <li key={a.id}>{new Date(a.created_at).toLocaleString()} — {renderDetails(a)}</li>
+            <li key={a.id} className="text-slate-300">{new Date(a.created_at).toLocaleString()} — {renderDetails(a)}</li>
           ))}
         </ul>
       )}
